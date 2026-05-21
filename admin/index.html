@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>管理后台 | AI工具前线</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0d1117; color: #c9d1d9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; min-height: 100vh; }
+.container { max-width: 800px; margin: 0 auto; padding: 40px 20px; }
+
+/* Login */
+.login-panel { background: #161b22; border: 1px solid #21262d; border-radius: 12px; padding: 40px; max-width: 440px; margin: 80px auto; text-align: center; }
+.login-panel h1 { color: #58a6ff; font-size: 1.8em; margin-bottom: 8px; }
+.login-panel p { color: #8b949e; margin-bottom: 24px; }
+.login-panel input { width: 100%; padding: 12px 16px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; color: #c9d1d9; font-size: 1em; margin-bottom: 12px; outline: none; }
+.login-panel input:focus { border-color: #58a6ff; }
+.login-panel .btn { width: 100%; padding: 12px; background: #238636; border: none; border-radius: 6px; color: white; font-size: 1em; cursor: pointer; transition: background 0.2s; }
+.login-panel .btn:hover { background: #2ea043; }
+.login-panel .error { color: #f85149; font-size: 0.9em; margin-top: 8px; display: none; }
+.token-hint { font-size: 0.75em; color: #484f58; margin-top: 16px; }
+
+/* Editor */
+.editor { display: none; }
+header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid #21262d; margin-bottom: 24px; }
+header h1 { color: #58a6ff; font-size: 1.5em; }
+header .logout { color: #8b949e; cursor: pointer; font-size: 0.9em; }
+header .logout:hover { color: #f85149; }
+.info-bar { display: flex; gap: 16px; margin-bottom: 24px; color: #8b949e; font-size: 0.85em; }
+.info-bar span { background: #161b22; padding: 4px 12px; border-radius: 20px; border: 1px solid #21262d; }
+.form-group { margin-bottom: 16px; }
+.form-group label { display: block; color: #8b949e; margin-bottom: 6px; font-size: 0.9em; }
+.form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 14px; background: #161b22; border: 1px solid #30363d; border-radius: 6px; color: #c9d1d9; font-size: 0.95em; outline: none; font-family: inherit; resize: vertical; }
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #58a6ff; }
+.form-group textarea { min-height: 300px; font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 0.9em; line-height: 1.5; }
+.form-row { display: flex; gap: 16px; }
+.form-row .form-group { flex: 1; }
+.btn-row { display: flex; gap: 12px; margin-top: 24px; }
+.btn { padding: 10px 24px; border: none; border-radius: 6px; font-size: 0.95em; cursor: pointer; transition: all 0.2s; }
+.btn-primary { background: #238636; color: white; }
+.btn-primary:hover { background: #2ea043; }
+.btn-preview { background: #1f6feb; color: white; }
+.btn-preview:hover { background: #388bfd; }
+.btn-secondary { background: #21262d; color: #c9d1d9; }
+.btn-secondary:hover { background: #30363d; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.status { padding: 12px 16px; border-radius: 6px; margin-top: 16px; display: none; font-size: 0.9em; }
+.status.success { background: #052e16; border: 1px solid #238636; color: #3fb950; display: block; }
+.status.error { background: #2d0f1a; border: 1px solid #f85149; color: #f85149; display: block; }
+.preview-panel { display: none; background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 24px; margin-top: 24px; }
+.preview-panel.active { display: block; }
+.preview-panel h2 { color: #58a6ff; }
+.preview-panel .preview-meta { color: #8b949e; font-size: 0.85em; margin: 8px 0 16px; }
+.preview-content { color: #c9d1d9; line-height: 1.7; }
+.preview-content h1, .preview-content h2, .preview-content h3 { color: #58a6ff; margin: 16px 0 8px; }
+.preview-content p { margin-bottom: 12px; }
+.preview-content ul, .preview-content ol { margin: 8px 0 8px 24px; }
+.preview-content code { background: #0d1117; padding: 2px 6px; border-radius: 4px; }
+.preview-content pre { background: #0d1117; padding: 16px; border-radius: 6px; overflow-x: auto; }
+.setup-modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 999; justify-content: center; align-items: center; }
+.setup-modal.active { display: flex; }
+.setup-modal .modal-content { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 32px; max-width: 500px; width: 90%; }
+.setup-modal h2 { color: #58a6ff; margin-bottom: 16px; }
+.setup-modal p { color: #8b949e; margin-bottom: 12px; font-size: 0.9em; }
+.setup-modal ol { color: #8b949e; margin: 12px 0 16px 20px; font-size: 0.9em; }
+.setup-modal ol li { margin-bottom: 6px; }
+.setup-modal a { color: #58a6ff; }
+</style>
+</head>
+<body>
+
+<!-- Login Screen -->
+<div class="login-panel" id="loginPanel">
+    <h1>🔐 AI工具前线 · 管理后台</h1>
+    <p>请输入访问密码</p>
+    <input type="password" id="passwordInput" placeholder="输入密码..." onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="btn" onclick="doLogin()">登 录</button>
+    <div class="error" id="loginError">密码错误</div>
+    <div class="token-hint">首次使用？点击右上角 ⚙️ 配置GitHub Token</div>
+</div>
+
+<!-- Token Setup Modal -->
+<div class="setup-modal" id="setupModal">
+    <div class="modal-content">
+        <h2>⚙️ 配置 GitHub Token</h2>
+        <p>发布功能需要下面这个权限来把文章推送到GitHub。Token只授权给这一个仓库，不会碰到你其他项目：</p>
+        <ol>
+            <li>打开 <a href="https://github.com/settings/tokens?type=beta" target="_blank">github.com/settings/tokens</a></li>
+            <li>点击 <b>Generate new token</b> → Fine-grained token</li>
+            <li>Repository access: <b>Only select repositories</b> → 选 <b>L1-DEL/L1D</b></li>
+            <li>Permissions: <b>Contents → Read and write</b></li>
+            <li>点 Generate，复制生成的Token</li>
+        </ol>
+        <input type="password" id="tokenInput" placeholder="粘贴你的 GitHub Token..." style="width:100%;padding:10px;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#c9d1d9;margin-bottom:12px;">
+        <div style="display:flex;gap:12px;">
+            <button class="btn btn-primary" onclick="saveToken()" style="flex:1;">保 存</button>
+            <button class="btn btn-secondary" onclick="closeSetup()">取消</button>
+        </div>
+        <div class="error" id="tokenError" style="margin-top:8px;">Token无效或没有权限</div>
+    </div>
+</div>
+
+<!-- Editor Screen -->
+<div class="editor" id="editorPanel">
+    <header>
+        <h1>✍️ 发布新文章</h1>
+        <div style="display:flex;gap:12px;align-items:center;">
+            <span class="logout" onclick="openSetup()" title="Token设置">⚙️</span>
+            <span class="logout" onclick="logout()">退出</span>
+        </div>
+    </header>
+    <div class="info-bar">
+        <span id="repoStatus">📦 L1-DEL/L1D</span>
+        <span id="articleCount">📊 文章数：--</span>
+        <span id="tokenStatus">🔑 Token：未配置</span>
+    </div>
+    
+    <div class="form-row">
+        <div class="form-group">
+            <label>标题 *</label>
+            <input type="text" id="titleInput" placeholder="文章标题...">
+        </div>
+        <div class="form-group">
+            <label>分类 *</label>
+            <select id="categorySelect">
+                <option value="AI工具前线">🔧 AI工具前线</option>
+                <option value="AI搞钱研究所">💰 AI搞钱研究所</option>
+            </select>
+        </div>
+    </div>
+    
+    <div class="form-group">
+        <label>标签（用逗号分隔）</label>
+        <input type="text" id="tagsInput" placeholder="AI工具,搞钱,教程">
+    </div>
+    
+    <div class="form-group">
+        <label>内容（Markdown格式）*</label>
+        <textarea id="contentInput" placeholder="## 标题
+
+这里是文章正文。支持 Markdown 格式...
+
+### 要点
+
+- 第一点
+- 第二点
+
+**总结**：这里写总结内容。"></textarea>
+    </div>
+    
+    <div class="btn-row">
+        <button class="btn btn-preview" onclick="togglePreview()">👁️ 预览</button>
+        <button class="btn btn-primary" id="publishBtn" onclick="publishArticle()">🚀 发布文章</button>
+    </div>
+    
+    <div id="publishStatus" class="status"></div>
+    
+    <div class="preview-panel" id="previewPanel">
+        <h2 id="previewTitle">标题</h2>
+        <div class="preview-meta" id="previewMeta"></div>
+        <div class="preview-content" id="previewContent"></div>
+    </div>
+</div>
+
+<script>
+// ============ CONFIG ============
+const REPO_OWNER = 'L1-DEL';
+const REPO_NAME = 'L1D';
+const BRANCH = 'main';
+const ADMIN_PASSWORD = 'qclaw2026'; // 修改这个来换密码
+
+// ============ STATE ============
+let githubToken = localStorage.getItem('aitools_github_token') || '';
+let previewVisible = false;
+
+// ============ INIT ============
+(function init() {
+    document.getElementById('tokenStatus').textContent = githubToken ? '🔑 Token：已配置' : '🔑 Token：未配置';
+    document.getElementById('repoStatus').textContent = '📦 ' + REPO_OWNER + '/' + REPO_NAME;
+    updateArticleCount();
+})();
+
+async function updateArticleCount() {
+    try {
+        const resp = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/output/data/articles_index.json`, {
+            headers: { Accept: 'application/vnd.github.v3+json' }
+        });
+        if (!resp.ok) { document.getElementById('articleCount').textContent = '📊 文章数：--'; return; }
+        const data = await resp.json();
+        const content = atob(data.content);
+        const articles = JSON.parse(content);
+        document.getElementById('articleCount').textContent = '📊 文章数：' + articles.length;
+    } catch(e) {
+        document.getElementById('articleCount').textContent = '📊 文章数：--';
+    }
+}
+
+// ============ AUTH ============
+function doLogin() {
+    const pw = document.getElementById('passwordInput').value;
+    if (pw === ADMIN_PASSWORD) {
+        document.getElementById('loginPanel').style.display = 'none';
+        document.getElementById('editorPanel').style.display = 'block';
+        updateArticleCount();
+    } else {
+        document.getElementById('loginError').style.display = 'block';
+    }
+}
+
+function logout() {
+    document.getElementById('loginPanel').style.display = 'block';
+    document.getElementById('editorPanel').style.display = 'none';
+    document.getElementById('passwordInput').value = '';
+    document.getElementById('loginError').style.display = 'none';
+}
+
+// ============ TOKEN ============
+function openSetup() {
+    document.getElementById('setupModal').classList.add('active');
+    document.getElementById('tokenInput').value = githubToken;
+    document.getElementById('tokenError').style.display = 'none';
+}
+
+function closeSetup() {
+    document.getElementById('setupModal').classList.remove('active');
+}
+
+async function saveToken() {
+    const token = document.getElementById('tokenInput').value.trim();
+    if (!token) return;
+    
+    // Test the token
+    try {
+        const resp = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}`, {
+            headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github.v3+json' }
+        });
+        if (resp.ok) {
+            githubToken = token;
+            localStorage.setItem('aitools_github_token', token);
+            document.getElementById('tokenStatus').textContent = '🔑 Token：已配置';
+            closeSetup();
+            showStatus('Token验证成功！现在可以发布了', 'success');
+        } else {
+            document.getElementById('tokenError').style.display = 'block';
+        }
+    } catch(e) {
+        document.getElementById('tokenError').style.display = 'block';
+    }
+}
+
+// ============ PREVIEW ============
+function togglePreview() {
+    previewVisible = !previewVisible;
+    const panel = document.getElementById('previewPanel');
+    if (previewVisible) {
+        panel.classList.add('active');
+        updatePreview();
+    } else {
+        panel.classList.remove('active');
+    }
+}
+
+function updatePreview() {
+    const title = document.getElementById('titleInput').value || '未命名文章';
+    const category = document.getElementById('categorySelect').value;
+    const tags = document.getElementById('tagsInput').value;
+    const content = document.getElementById('contentInput').value;
+    
+    document.getElementById('previewTitle').textContent = title;
+    document.getElementById('previewMeta').textContent = `📂 ${category} | 🏷️ ${tags || '无标签'} | 📅 ${new Date().toISOString().split('T')[0]}`;
+    
+    // Simple markdown to HTML
+    let html = content
+        .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+        .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+        .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+        .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+        .replace(/`(.+?)`/g, '<code>$1</code>')
+        .replace(/^- (.+)$/gm, '<li>$1</li>')
+        .replace(/\n\n/g, '</p><p>')
+        .replace(/^(.+)$/gm, (match) => {
+            if (match.startsWith('<')) return match;
+            return match;
+        });
+    
+    document.getElementById('previewContent').innerHTML = '<p>' + html + '</p>';
+}
+
+// Listen for content changes to update preview
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('contentInput').addEventListener('input', () => {
+        if (previewVisible) updatePreview();
+    });
+    document.getElementById('titleInput').addEventListener('input', () => {
+        if (previewVisible) updatePreview();
+    });
+});
+
+// ============ PUBLISH ============
+async function publishArticle() {
+    if (!githubToken) {
+        showStatus('请先配置 GitHub Token（点击右上角 ⚙️）', 'error');
+        openSetup();
+        return;
+    }
+    
+    const title = document.getElementById('titleInput').value.trim();
+    const category = document.getElementById('categorySelect').value;
+    const tags = document.getElementById('tagsInput').value.trim();
+    const contentMd = document.getElementById('contentInput').value.trim();
+    
+    if (!title || !contentMd) {
+        showStatus('标题和内容不能为空', 'error');
+        return;
+    }
+    
+    const btn = document.getElementById('publishBtn');
+    btn.disabled = true;
+    btn.textContent = '⏳ 发布中...';
+    document.getElementById('publishStatus').className = 'status';
+    document.getElementById('publishStatus').style.display = 'none';
+    
+    try {
+        const today = new Date().toISOString().split('T')[0];
+        const slug = title.replace(/[^\w\u4e00-\u9fff-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || 'untitled';
+        const articleFolder = `output/articles/${slug}/`;
+        
+        // Build article HTML
+        const articleHtml = buildArticleHtml(title, contentMd, category, tags, today);
+        
+        // Generate file content as base64
+        const htmlBase64 = btoa(unescape(encodeURIComponent(articleHtml)));
+        
+        // 1. Create the article HTML file
+        const createResp = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${articleFolder}index.html`, {
+            method: 'PUT',
+            headers: {
+                Authorization: 'Bearer ' + githubToken,
+                Accept: 'application/vnd.github.v3+json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                message: `发布: ${title}`,
+                content: htmlBase64,
+                branch: BRANCH
+            })
+        });
+        
+        if (!createResp.ok) {
+            const err = await createResp.json();
+            throw new Error(err.message || '创建文章失败');
+        }
+        
+        // 2. Fetch current index, add article, push back
+        const idxResp = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/output/data/articles_index.json`, {
+            headers: { Authorization: 'Bearer ' + githubToken, Accept: 'application/vnd.github.v3+json' }
+        });
+        const idxData = await idxResp.json();
+        const articles = JSON.parse(atob(idxData.content));
+        
+        articles.push({
+            title: title,
+            date: today,
+            tags: tags ? tags.split(',').map(t => t.trim()).filter(Boolean) : [],
+            category: category,
+            slug: slug,
+            description: contentMd.substring(0, 120).replace(/[#*\n]/g, ''),
+            type: 'article',
+            file: `${articleFolder}index.html`
+        });
+        
+        const idxBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(articles, null, 2))));
+        
+        await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/output/data/articles_index.json`, {
+            method: 'PUT',
+            headers: {
+                Authorization: 'Bearer ' + githubToken,
+                Accept: 'application/vnd.github.v3+json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                message: `更新索引: ${title}`,
+                content: idxBase64,
+                sha: idxData.sha,
+                branch: BRANCH
+            })
+        });
+        
+        showStatus(`✅ 发布成功！文章已推送到 GitHub，1-2分钟后在网站上可见。
+🔗 链接：https://L1-DEL.github.io/L1D/articles/${slug}/`, 'success');
+        
+        // Clear form
+        document.getElementById('titleInput').value = '';
+        document.getElementById('contentInput').value = '';
+        document.getElementById('tagsInput').value = '';
+        updateArticleCount();
+        
+    } catch(e) {
+        showStatus('❌ 发布失败：' + e.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '🚀 发布文章';
+    }
+}
+
+function buildArticleHtml(title, contentMd, category, tags, date) {
+    let articleHtml = contentMd
+        .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+        .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+        .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+        .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/\n- (.+)/g, '\n<li>$1</li>')
+        .replace(/(\n<li>.*<\/li>\n?)+/g, (m) => '<ul>' + m + '</ul>')
+        .replace(/\n\n/g, '</p><p>')
+        .replace(/\n/g, '<br>');
+    
+    return `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${title} | AI工具前线</title>
+    <meta name="description" content="${contentMd.substring(0, 150).replace(/[#*\n]/g, '')}">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0d1117; color: #c9d1d9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; line-height: 1.7; }
+        .container { max-width: 800px; margin: 0 auto; padding: 40px 20px; }
+        .back-link { color: #58a6ff; text-decoration: none; font-size: 0.9em; display: inline-block; margin-bottom: 24px; }
+        .back-link:hover { text-decoration: underline; }
+        .article-header { text-align: center; padding: 40px 0; border-bottom: 1px solid #21262d; margin-bottom: 32px; }
+        .article-header h1 { color: #58a6ff; font-size: 2em; margin-bottom: 12px; }
+        .article-meta { color: #8b949e; font-size: 0.9em; }
+        .article-meta span { margin: 0 8px; }
+        .article-body { font-size: 1.05em; }
+        .article-body h2 { color: #58a6ff; margin: 28px 0 14px; font-size: 1.4em; border-left: 3px solid #58a6ff; padding-left: 12px; }
+        .article-body h3 { color: #58a6ff; margin: 20px 0 10px; font-size: 1.2em; }
+        .article-body p { margin-bottom: 14px; }
+        .article-body ul, .article-body ol { margin: 10px 0 10px 24px; }
+        .article-body li { margin-bottom: 6px; }
+        .article-body code { background: #161b22; padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
+        .article-body pre { background: #161b22; padding: 16px; border-radius: 6px; overflow-x: auto; margin: 16px 0; }
+        .article-body b { color: #ffffff; }
+        footer { text-align: center; padding: 40px 0; color: #484f58; font-size: 0.85em; border-top: 1px solid #21262d; margin-top: 60px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">← 返回首页</a>
+        <div class="article-header">
+            <h1>${title}</h1>
+            <div class="article-meta">
+                <span>📅 ${date}</span>
+                <span>📂 ${category}</span>
+                ${tags ? '<span>🏷️ ' + tags.split(',').map(t => t.trim()).join(', ') + '</span>' : ''}
+            </div>
+        </div>
+        <div class="article-body">
+            <p>${articleHtml}</p>
+        </div>
+        <footer>
+            <p>AI工具前线 &copy; 2026 | 全自动AI内容站 | 由AI和用户共同创作</p>
+        </footer>
+    </div>
+</body>
+</html>`;
+}
+
+function showStatus(msg, type) {
+    const el = document.getElementById('publishStatus');
+    el.textContent = msg;
+    el.className = 'status ' + type;
+    el.style.display = 'block';
+    setTimeout(() => { el.style.display = 'none'; }, 10000);
+}
+</script>
+</body>
+</html>
